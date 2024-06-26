@@ -7,6 +7,9 @@
 
 namespace plt = matplotlibcpp;
 
+//prottype function
+double applyKernel(int n_points, int x_position, std::vector<double> kernel, std::vector<double> y_values);
+
 double fwhm2sigma(float fwhm)
 {
     double sigma = fwhm / (sqrt(8*log(2)));
@@ -38,7 +41,7 @@ std::vector<double> computeKernel(int n_points, int x_position, double fwhm)
     return kernel;
 }
 
-std::vector<double> computeKernelWithSigma(int n_points, int x_position, double sigma)
+double computeAndApplyKernel(int n_points, int x_position, double sigma, std::vector<double> y_values)
 {
     //Compute the kernel for the given x point
     std::vector<double> kernel(n_points);
@@ -53,7 +56,7 @@ std::vector<double> computeKernelWithSigma(int n_points, int x_position, double 
     //apply weight to each kernel position to give more important value to the x that are around ower x
     for(int i = 0;i<n_points;i++)
         kernel[i] = kernel[i] / sum_kernel;
-    return kernel;
+    return applyKernel(n_points, x_position, kernel, y_values);
 }
 
 double applyKernel(int n_points, int x_position, std::vector<double> kernel, std::vector<double> y_values)
@@ -87,10 +90,13 @@ int main()
     //apply filter to every points
     for (int x_position=0;x_position<n_points;x_position++)
     {
-        std::vector<double> kernel(n_points);
-        kernel = computeKernelWithSigma(n_points,x_position,sigma);
-        double y_filtered = applyKernel(n_points, x_position,kernel,y_values);
+        double y_filtered = computeAndApplyKernel(n_points,x_position,sigma,y_values);
         y_values_filtered[x_position] = y_filtered;
+    }
+
+    std::vector<int> x_values(n_points);
+    for(int i = 0; i<n_points; i++){
+        x_values[i] = i;
     }
     plt::plot(x_values, y_values,"r");
     plt::plot(x_values, y_values_filtered);
