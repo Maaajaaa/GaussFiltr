@@ -46,10 +46,12 @@ double computeAndApplyKernel(int n_points, int x_position, double sigma, std::ve
     //Compute the kernel for the given x point
     std::vector<double> kernel(n_points);
     double sum_kernel = 0;
+    //calculate sigma² once to speed up calculation
+    double twoSigmaSquared = (2*pow(sigma,2));
     for (int i =0; i<n_points;i++)
     {
         //Compute gaussian kernel
-        kernel[i] = exp(-(pow(i- x_position,2) / (2*pow(sigma,2))));
+        kernel[i] = exp(-(pow(i- x_position,2) / twoSigmaSquared));
         //compute a weight for each kernel position
         sum_kernel += kernel[i];
     }
