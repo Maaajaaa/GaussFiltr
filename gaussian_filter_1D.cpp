@@ -8,7 +8,7 @@
 namespace plt = matplotlibcpp;
 
 //prottype function
-double applyKernel(int n_points, int x_position, std::vector<double> kernel, std::vector<double> y_values);
+double applyKernel(int n_points, int x_position, double kernel[], double y_values[]);
 
 double fwhm2sigma(float fwhm)
 {
@@ -22,29 +22,10 @@ double sigma2fwhm(float sigma)
     return fwhm;
 }
 
-std::vector<double> computeKernel(int n_points, int x_position, double fwhm)
+double computeAndApplyKernel(int n_points, int x_position, double sigma, double y_values[])
 {
     //Compute the kernel for the given x point
-    std::vector<double> kernel(n_points);
-    double sigma  = fwhm2sigma(fwhm);
-    double sum_kernel = 0;
-    for (int i =0; i<n_points;i++)
-    {
-        //Compute gaussian kernel
-        kernel[i] = exp(-(pow(i - x_position,2) / (2*pow(sigma,2))));
-        //compute a weight for each kernel position
-        sum_kernel += kernel[i];
-    }
-    //apply weight to each kernel position to give more important value to the x that are around ower x
-    for(int i = 0;i<n_points;i++)
-        kernel[i] = kernel[i] / sum_kernel;
-    return kernel;
-}
-
-double computeAndApplyKernel(int n_points, int x_position, double sigma, std::vector<double> y_values)
-{
-    //Compute the kernel for the given x point
-    std::vector<double> kernel(n_points);
+    double kernel[n_points] = {};
     double sum_kernel = 0;
     //calculate sigma² once to speed up calculation
     double twoSigmaSquared = (2*pow(sigma,2));
@@ -61,16 +42,13 @@ double computeAndApplyKernel(int n_points, int x_position, double sigma, std::ve
     return applyKernel(n_points, x_position, kernel, y_values);
 }
 
-double applyKernel(int n_points, int x_position, std::vector<double> kernel, std::vector<double> y_values)
+double applyKernel(int n_points, int x_position, double kernel[], double y_values[])
 {
-    std::vector<double> smoothed_vals(n_points);
     double y_filtered = 0;
     //apply filter to all the y values with the weighted kernel
     for(int i = 0;i<n_points;i++) 
         y_filtered += kernel[i] * y_values[i];
 
-    //store the filtered value for this x_postions
-    smoothed_vals[x_position] = y_filtered;
     return y_filtered;
 }
 
@@ -80,14 +58,12 @@ int main()
     //double fwhm = 2; //FWHM
     double sigma = 0.8493218003; //can be calculated dfrom FWHM
 
-    std::vector<double> y_values(n_points);
+    double y_values[n_points] = {};
     //Initiate y array with random values
     for (int i = 0;i<n_points;i++)
         y_values[i] = std::rand() % 10;
 
-    std::vector<double> y_values_filtered(n_points);
-
-    plt::figure_size(1200, 780);
+    double y_values_filtered[n_points] = {};
 
     //apply filter to every points
     for (int x_position=0;x_position<n_points;x_position++)
@@ -96,12 +72,18 @@ int main()
         y_values_filtered[x_position] = y_filtered;
     }
 
-    std::vector<int> x_values(n_points);
+    std::vector<int> x_vector(n_points);
     for(int i = 0; i<n_points; i++){
-        x_values[i] = i;
+        x_vector[i] = i;
     }
-    plt::plot(x_values, y_values,"r");
-    plt::plot(x_values, y_values_filtered);
+
+    // convert arrays to vectors for plotting
+    std::vector<int> y_vector(y_values, y_values + n_points);
+    std::vector<int> y_filt_vector(y_values_filtered, y_values_filtered + n_points);
+
+    plt::figure_size(1200, 780);
+    plt::plot(x_vector, y_vector, "r");
+    plt::plot(x_vector, y_filt_vector);
     plt::show();
 
 }
