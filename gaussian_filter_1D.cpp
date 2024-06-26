@@ -38,6 +38,24 @@ std::vector<double> computeKernel(int n_points, int x_position, std::vector<doub
     return kernel;
 }
 
+std::vector<double> computeKernelWithSigma(int n_points, int x_position, std::vector<double> x_values, double sigma)
+{
+    //Compute the kernel for the given x point
+    std::vector<double> kernel(n_points);
+    double sum_kernel = 0;
+    for (int i =0; i<n_points;i++)
+    {
+        //Compute gaussian kernel
+        kernel[i] = exp(-(pow(x_values[i] - x_position,2) / (2*pow(sigma,2))));
+        //compute a weight for each kernel position
+        sum_kernel += kernel[i];
+    }
+    //apply weight to each kernel position to give more important value to the x that are around ower x
+    for(int i = 0;i<n_points;i++)
+        kernel[i] = kernel[i] / sum_kernel;
+    return kernel;
+}
+
 double applyKernel(int n_points, int x_position, std::vector<double> kernel, std::vector<double> y_values)
 {
     std::vector<double> smoothed_vals(n_points);
@@ -54,7 +72,8 @@ double applyKernel(int n_points, int x_position, std::vector<double> kernel, std
 int main()
 {
     int n_points = 50; //number of points
-    double fwhm = 2; //FWHM
+    //double fwhm = 2; //FWHM
+    double sigma = 0.8493218003; //
     std::vector<double> x_values(n_points);
     //Initiate x array with values from 0 -> n_points
     for (int i = 0;i<n_points;i++)
@@ -72,7 +91,7 @@ int main()
     for (int x_position=0;x_position<n_points;x_position++)
     {
         std::vector<double> kernel(n_points);
-        kernel = computeKernel(n_points,x_position,x_values,fwhm);
+        kernel = computeKernelWithSigma(n_points,x_position,x_values,sigma);
         double y_filtered = applyKernel(n_points, x_position,kernel,y_values);
         y_values_filtered[x_position] = y_filtered;
     }
