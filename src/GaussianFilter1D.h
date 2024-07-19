@@ -104,13 +104,12 @@ class GaussianFilter1D {
      * @brief      apply the kernel for the element at x_position and return it
      *
      * @param[in]  n_points  The length of the future input array
-     * @param[in]  x_position postition of the y values that will be smoothed 
      * @param[in]  kernel[] the gaussian
      * @param[in]  y_values[] the input array that will be filtered
      *
      * @return     smoothed y value at x_position
      */
-    float applyKernel(int n_points, int x_position, float kernel[], float y_values[]);
+    float applyKernel(int n_points, float kernel[], float y_values[]);
 
     protected:
 

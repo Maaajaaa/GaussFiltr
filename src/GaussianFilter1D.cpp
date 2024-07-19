@@ -70,7 +70,12 @@ float GaussianFilter1D::makeAndApplyKernelFromKernelCache(float kernelCache[], i
     return 0.0f;
 }
 
-float GaussianFilter1D::applyKernel(int n_points, int x_position, float kernel[], float y_values[])
+float GaussianFilter1D::applyKernel(int n_points, float kernel[], float y_values[])
 {
-    return 0.0f;
+    float y_filtered = 0;
+    //apply filter to all the y values with the weighted kernel
+    for (int i = 0; i < n_points; i++)
+        y_filtered += kernel[i] * y_values[i];
+
+    return y_filtered;
 }
