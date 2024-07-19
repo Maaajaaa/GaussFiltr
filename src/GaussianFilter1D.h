@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //GaussianFilter1D.h
 //
-// Arduino library to run an effiecient Gaussian 1D blur filter. Possible usecases are LED Strips
+// Arduino library to run an efficient Gaussian 1D blur filter. Possible usecases are LED Strips
 //
 // 
 //
@@ -47,6 +47,7 @@
 #define GaussianFilter1D_h
 
 #include <Arduino.h>
+#include <array>
 
 class GaussianFilter1D {
     public:
@@ -54,7 +55,7 @@ class GaussianFilter1D {
     /**
      * @brief Constructor.
      * @param cachedMode Cached mode speeds up for repeated calculations using the same sigma paramters, at the expense of slightly increased memory consumption
-*/
+    */
     GaussianFilter1D(bool cachedMode);
 
    /**
@@ -63,17 +64,18 @@ class GaussianFilter1D {
     * @param futureArrayLength Length that the 
     * 
     */
-   void begin(float sigma, int futureArrayLength);
+    void begin(float sigma, int futureArrayLength=0);
 
-   /**
-    * @brief Initialization for non-cached mode, if caching is enabled, caching will be performed at first run of filter()
-    */
-   void begin();
-
-   /**
+    /**
     * @brief apply the filter on the given array     
     */
-   void filter(float data[], int data_length);
+    void filter(float data[], int data_length);
+
+    /**
+    * @brief end the filter and clear allocated memory
+    */    
+    void end();
+
 
    private:
 
@@ -114,7 +116,7 @@ class GaussianFilter1D {
     protected:
 
     bool cachedMode;
-    std::array<float> kernelCache;
+    float* kernelCache;
     float sigma;
     int lastArrayLength;
 };
