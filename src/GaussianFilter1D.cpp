@@ -53,33 +53,37 @@ void GaussianFilter1D::begin(float sigma, int futureArrayLength)
 {
     if(this->cachedMode && futureArrayLength != 0){
        kernelCache = new float[futureArrayLength];
-       computeKernelCache(this.kernelCache, futureArrayLength, sigma);
+       computeKernelCache(this->kernelCache, futureArrayLength, sigma);
     }
+    this->sigma = sigma;
 }
 
 void GaussianFilter1D::filter(float data[], int data_length)
 {
-    if(!cachedMode){
-        float tempKernelCache[data_length];
-        computeKernelCache(&tempKernelCache, data_length, this->sigma);
-    }else{
-        //cached mode
-        //check if there's a mismatch between the saved and the needed kernel
-        if(data_length != this->lastArrayLength){
-            delete [] kernelCache;
-            kernelCache = new float[futureArrayLength];
-            computeKernelCache(this.kernelCache, futureArrayLength, sigma);
-        }
-        float output[data_length];
-        for(int i = 0; i < data_length; i++){
-            //calculate each value
-            output[i] = makeAndApplyKernelFromKernelCache(this->kernelCache, data_length, i, data);
-        }
-        //save output to data
-        for(int i = 0; i < data_length; i++){
-            data[i] = output[i];
-        }
+    float output[data_length];
+    //either needed for non-cached mode, also
+    //check if there's a mismatch between the saved and the needed kernel
+    if(!cachedMode || data_length != this->lastArrayLength){
+        delete [] kernelCache;
+        kernelCache = new float[data_length];
+        computeKernelCache(this->kernelCache, data_length, this->sigma);
     }
+
+    for(int i = 0; i < data_length; i++){
+        //calculate each value
+        output[i] = makeAndApplyKernelFromKernelCache(this->kernelCache, data_length, i, data);
+    }
+
+    //free the memory again in non-cached mode
+    if(!cachedMode){
+        delete [] kernelCache;
+    }
+
+    //save output to data
+    for(int i = 0; i < data_length; i++){
+        data[i] = output[i];
+    }
+    return;
 }
 
 void GaussianFilter1D::end()
@@ -119,7 +123,7 @@ float GaussianFilter1D::makeAndApplyKernelFromKernelCache(float kernelCache[], i
     //apply weight to each kernel position to give more important value to the x that are around ower x
     for (int i = 0; i < n_points; i++)
         kernel[i] = kernel[i] / sum_kernel;
-    return applyKernel(n_points, x_position, kernel, y_values);
+    return applyKernel(n_points, kernel, y_values);
 }
 
 float GaussianFilter1D::applyKernel(int n_points, float kernel[], float y_values[])
