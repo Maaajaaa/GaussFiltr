@@ -52,7 +52,7 @@ GaussianFilter1D::GaussianFilter1D(bool cachedMode)
 void GaussianFilter1D::begin(float sigma, int futureArrayLength)
 {
     if(this->cachedMode && futureArrayLength != 0){
-       kernelCache = new float[futureArrayLength];
+       kernelCache = new float[futureArrayLength * 2];
        computeKernelCache(this->kernelCache, futureArrayLength, sigma);
     }
     this->sigma = sigma;
@@ -65,7 +65,7 @@ void GaussianFilter1D::filter(float data[], int data_length)
     //check if there's a mismatch between the saved and the needed kernel
     if(!cachedMode || data_length != this->lastArrayLength){
         delete [] kernelCache;
-        kernelCache = new float[data_length];
+        kernelCache = new float[data_length * 2];
         computeKernelCache(this->kernelCache, data_length, this->sigma);
     }
 
