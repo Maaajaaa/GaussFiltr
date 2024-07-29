@@ -40,7 +40,6 @@
 // 20230729 Added Kernel radius, which reduces memory consumption by a lot and increases speed too
 //
 // ToDo: 
-// - limit kernel space
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -63,12 +62,15 @@ class GaussianFilter1D {
    /**
     * @brief Initialization for cached mode, if plain initialisation is used, caching will be performed at first run of filter()
     * @param[in]  sigma Sigma, standard deviation, paramter of gaussian distribution, typically between 0.1 and 
+    * @param[in]  epsilon Epsilon, desired minimum precision, used to calculate kernel window size
     * 
     */
     void begin(float sigma, float epsilon = 0.01);
 
     /**
-    * @brief apply the filter on the given array     
+    * @brief apply the filter on the given array
+    * @param[in] data array
+    * @param[in] data_length number of elements in array  
     */
     void filter(float data[], int data_length);
 

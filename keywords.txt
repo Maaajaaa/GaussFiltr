@@ -1,0 +1,26 @@
+############################################
+# Syntax Coloring Map For GaussianFilter1D
+############################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+GaussianFilter1D	KEYWORD1
+
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin                       KEYWORD2
+filter     	                KEYWORD2
+end                         KEYWORD2
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+GAUSSIAN_FILTER_DEBUG               LITERAL1
+Footer
