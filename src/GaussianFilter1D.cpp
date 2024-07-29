@@ -38,40 +38,44 @@
 //  History:
 //
 //  20230716 Created by maaajaaa
+//  20230729 Added Kernel radius, which reduces memory consumption by a lot and increases speed too
 //
 //  ToDo:
-//  - limit kernel space
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 GaussianFilter1D::GaussianFilter1D(bool cachedMode)
 {
     this->cachedMode = cachedMode;
-    this->lastArrayLength = 0;
+    this->kernelSize = 0;
 }
 
-void GaussianFilter1D::begin(float sigma, int futureArrayLength)
+void GaussianFilter1D::begin(float sigma, float epsilon)
 {
-    if(this->cachedMode && futureArrayLength != 0){
-       kernelCache = new float[futureArrayLength * 2];
-       computeKernelCache(this->kernelCache, futureArrayLength, sigma);
-    }
+    //calculate kernel radius, based on: https://stackoverflow.com/a/68050503
+    int kernelRadius = ceil(sqrt(-2*sigma*sigma*log(epsilon*0.5*sqrt(TWO_PI))));
+    //add one more for the centre kernel value
+    this->kernelSize = kernelRadius + 1;
     this->sigma = sigma;
+
+    if(this->cachedMode && this->kernelSize != 0){
+       kernelCache = new float[this->kernelSize];
+       computeSemiKernelCache(this->kernelCache, sigma);
+    }
 }
 
 void GaussianFilter1D::filter(float data[], int data_length)
 {
     float output[data_length];
-    //either needed for non-cached mode, also
-    //check if there's a mismatch between the saved and the needed kernel
-    if(!cachedMode || data_length != this->lastArrayLength){
+    //non-cached mode
+    if(!cachedMode){
         delete [] kernelCache;
-        kernelCache = new float[data_length * 2];
-        computeKernelCache(this->kernelCache, data_length, this->sigma);
+        kernelCache = new float[kernelSize];
+        computeSemiKernelCache(this->kernelCache, this->sigma);
     }
 
     for(int i = 0; i < data_length; i++){
         //calculate each value
-        output[i] = makeAndApplyKernelFromKernelCache(this->kernelCache, data_length, i, data);
+        output[i] = applyFilterFromSemiKernelCache(this->kernelCache, data_length, i, data);
     }
 
     //free the memory again in non-cached mode
@@ -91,47 +95,92 @@ void GaussianFilter1D::end()
     delete [] kernelCache;
 }
 
-void GaussianFilter1D::computeKernelCache(float kernelCache[], int n_points, float sigma)
+#ifdef GAUSSIAN_FILTER_DEBUG
+
+String GaussianFilter1D::getSemiKernel()
+{
+    if(cachedMode){
+        String str;
+        for (int i = 0; i < this->kernelSize; i++)
+        {
+            /* code */
+            str += String(this->kernelCache[i], 9);
+            str += String(", ");        
+        }
+        str += String(" ; ");
+        str += String(this->kernelSize);
+        return str;
+    }else{
+        return String("no kernel cache is stored in non-cached mode");
+    }
+}
+
+#endif
+
+void GaussianFilter1D::computeSemiKernelCache(float kernelCache[], float sigma)
 {
     //Compute the kernel for the given x point
     //calculate sigma² once to speed up calculation
-    float twoSigmaSquared = (2 * pow(sigma, 2));
-    for (int i = 0; i < n_points * 2; i++) {
-        //Compute gaussian kernel
-        //kernel cache at 0 is -1*n_points
-        kernelCache[i] = exp(-(pow(-1 * n_points + i, 2) / twoSigmaSquared));
+    const float twoSigmaSquared = (2 * pow(sigma, 2));
+
+    //we don't need to calculate position 0 as it is 1.0
+    kernelCache[0] = 1.0;
+    //add the skipped middle point of the kernel to the sum
+    this->kernelSum += 1.0;
+
+    for (int i = 1; i < this->kernelSize; i++) {
+        //Compute half of the gaussian kernel (it's symmetric and 1.0 in the centre)
+        kernelCache[i] = exp(-(pow(i, 2) / twoSigmaSquared));
+        this->kernelSum +=  kernelCache[i];
     }
-    if(this->cachedMode){
-        this->lastArrayLength = n_points;
-        this->sigma = sigma;
+    //apply weight to the kernel
+    for (int i = 0; i < kernelSize; i++){
+        kernelCache[i] = kernelCache[i] / kernelSum;
     }
     return;
 }
 
-float GaussianFilter1D::makeAndApplyKernelFromKernelCache(float kernelCache[], int n_points, int x_position, float y_values[])
+float GaussianFilter1D::applyFilterFromSemiKernelCache(float kernelCache[], int n_points, int x_position, float y_values[])
 {
-    //make array for the actual kernel for the given x point
-    float kernel[n_points] = {};
-    float sum_kernel = 0;
-    for (int i = 0; i < n_points; i++) {
-        //fetch kernel vale from kernel cache
-        //+ n_points as -npoints is at 0
-        kernel[i] = kernelCache[i - x_position + n_points];
-        //compute a weight for each kernel position
-        sum_kernel += kernel[i];
+    //don't move past  the boundaries of the array
+    float y_filtered = 0.0;
+    //add the radius to the left side
+    int filterBegin = x_position - (kernelSize - 1);
+    if(filterBegin < 0){
+        filterBegin = 0;
     }
-    //apply weight to each kernel position to give more important value to the x that are around ower x
-    for (int i = 0; i < n_points; i++)
-        kernel[i] = kernel[i] / sum_kernel;
-    return applyKernel(n_points, kernel, y_values);
-}
 
-float GaussianFilter1D::applyKernel(int n_points, float kernel[], float y_values[])
-{
-    float y_filtered = 0;
-    //apply filter to all the y values with the weighted kernel
-    for (int i = 0; i < n_points; i++)
-        y_filtered += kernel[i] * y_values[i];
+    for(int i = filterBegin; i<x_position; i++){
+        //reading the kernel backwards
+        y_filtered += y_values[i] * kernelCache[kernelSize-(i-filterBegin)];
+    }
+
+    //add the radius to the left side
+    int filterEnd = x_position + (kernelSize - 1);
+    //don't move past  the boundaries of the array
+    if(filterEnd > n_points){
+        filterEnd = n_points;
+    }
+
+    for(int i = x_position; i<filterEnd; i++){
+        //reading the kernel forward
+        y_filtered += y_values[i] * kernelCache[i-x_position];
+    }
+
+    #ifdef GAUSSIAN_FILTER_DEBUG
+
+    Serial.print("x: ");
+    Serial.print(x_position);
+    Serial.print("\tbegin: ");
+    Serial.print(filterBegin);
+    Serial.print("\tend: ");
+    Serial.print(filterEnd);
+    Serial.print("\tvalue: ");
+    Serial.print(y_values[x_position]);
+    Serial.print("\tresult: ");
+    Serial.println(y_filtered);
+
+    #endif
 
     return y_filtered;
 }
