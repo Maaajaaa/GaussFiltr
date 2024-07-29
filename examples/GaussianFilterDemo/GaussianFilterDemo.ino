@@ -10,7 +10,7 @@
 GaussianFilter1D filter = GaussianFilter1D(cachedMode);
 
 void setup(){
-  filter.begin(SIGMA, arrayLength);
+  filter.begin(SIGMA);
 
   Serial.begin(115200);
   while(!Serial);
