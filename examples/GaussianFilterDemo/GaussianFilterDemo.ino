@@ -1,4 +1,4 @@
-#include <GaussianFilter1D.h>
+#include <GaussFiltr.h>
 
 #define cachedMode false
 
