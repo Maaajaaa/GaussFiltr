@@ -1,27 +1,25 @@
-# gaussian_filter_1D C++
+# 1D Gaussian filter library for Arduino
 
-Implementation of a gaussian filter 1D, also known as gaussian kernel smoother in c++.
+Implementation of a 1D [Gaussian Filter](https://en.wikipedia.org/wiki/Gaussian_Filter).
 
-https://en.wikipedia.org/wiki/Kernel_smoother
+Features a cached mode for faster re-runs of the filter, provided the sigma stays the same. This will however go at the expense of a few extra bytes of RAM (around 8-12*32bit + array overhead for most sigma values).
 
-In this version the y values are random and the x values are set from 0-> n_points with a step of 1.
-
-*Param*:
-
-n_point: number of points
-
-I am using the package matplotlib-cpp to plot the curves, a wrapper from https://github.com/lava/matplotlib-cpp.
-
-*How to use ?*
-
-I am using g++ compiler on Ubuntu 16.04.
-In a terminal use the following to build the executable:
 ```
-g++ gaussian_filter_1D.cpp -std=c++11 -Wall -o gaussian_filter_1D -I/usr/include/python2.7 -lpython2.7
-```
-When it is done type:
-```
-./gaussian_filter_1D
-```
+#include <GaussFiltr.h>
 
-![alt text](/image/plot_curves.png "Curves plot using the 1D gaussian filter, in red the curve not filtered, in blue filtered")
+#define cachedMode false
+
+#define SIGMA 0.2
+
+float floatArray[10] = {0, 1,2,3,4,5,6,7,8,9};
+
+GaussianFilter1D filter = GaussianFilter1D(cachedMode);
+
+filter.begin(SIGMA);
+
+filter.filter(floatArray);
+
+//floatArray is now filtered
+
+```
+more implementation details in the 

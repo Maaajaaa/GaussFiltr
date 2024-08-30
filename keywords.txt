@@ -6,7 +6,7 @@
 # Datatypes (KEYWORD1)
 #######################################
 
-GaussianFilter1D	KEYWORD1
+GaussFilt	KEYWORD1
 
 
 #######################################
