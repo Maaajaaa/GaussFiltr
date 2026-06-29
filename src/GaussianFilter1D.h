@@ -65,7 +65,7 @@ class GaussianFilter1D {
     * @param[in]  epsilon Epsilon, desired minimum precision, used to calculate kernel window size
     * 
     */
-    void begin(float sigma, float epsilon = 0.01);
+    int begin(float sigma, float epsilon = 0.01);
 
     /**
     * @brief apply the filter on the given array

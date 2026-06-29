@@ -49,7 +49,7 @@ GaussianFilter1D::GaussianFilter1D(bool cachedMode)
     this->kernelSize = 0;
 }
 
-void GaussianFilter1D::begin(float sigma, float epsilon)
+int GaussianFilter1D::begin(float sigma, float epsilon)
 {
     //calculate kernel radius, based on: https://stackoverflow.com/a/68050503
     int kernelRadius = ceil(sqrt(-2*sigma*sigma*log(epsilon*0.5*sqrt(TWO_PI))));
@@ -60,15 +60,21 @@ void GaussianFilter1D::begin(float sigma, float epsilon)
     if(this->cachedMode && this->kernelSize != 0){
        kernelCache = new float[this->kernelSize];
        computeSemiKernelCache(this->kernelCache, sigma);
+       return 0;
+    }else if(!this->cachedMode){
+        return 0;
+    }else{
+        return 1;
     }
-}
+
+    }
 
 void GaussianFilter1D::filter(float data[], int data_length)
 {
     float output[data_length];
     //non-cached mode
-    if(!cachedMode){
-        delete [] kernelCache;
+    if(!this->cachedMode){
+        //delete [] kernelCache;
         kernelCache = new float[kernelSize];
         computeSemiKernelCache(this->kernelCache, this->sigma);
     }
@@ -79,7 +85,7 @@ void GaussianFilter1D::filter(float data[], int data_length)
     }
 
     //free the memory again in non-cached mode
-    if(!cachedMode){
+    if(!this->cachedMode){
         delete [] kernelCache;
     }
 
